@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(VIEWER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model Section {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  manufacturers Manufacturer[]
+
+  @@map("sections")
+}
+
+model Manufacturer {
+  id          String   @id @default(cuid())
+  sectionId   String
+  name        String
+  slug        String
+  description String?
+  logoUrl     String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  section    Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  categories Category[]
+
+  @@unique([sectionId, slug])
+  @@map("manufacturers")
+}
+
+model Category {
+  id             String   @id @default(cuid())
+  manufacturerId String
+  name           String
+  slug           String
+  description    String?
+  icon           String?
+  order          Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  commands     Command[]
+
+  @@unique([manufacturerId, slug])
+  @@map("categories")
+}
+
+model Command {
+  id          String   @id @default(cuid())
+  categoryId  String
+  title       String
+  description String?
+  code        String
+  language    String   @default("bash")
+  platform    String?
+  version     String?
+  tags        String[]
+  notes       String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("commands")
+}
